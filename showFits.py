@@ -3,6 +3,7 @@ from __future__ import print_function
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.offsetbox import AnchoredText
 from mantid.simpleapi import *
 from ipywidgets import interact, interactive, fixed, interact_manual
 import ipywidgets as widgets
@@ -16,18 +17,18 @@ qLow = -25  # Lowest value of q for ConvertToMD
 qHigh = 25; # Highest value of q for ConvertToMD
 Q3DFrame='Q_lab' # Either 'Q_lab' or 'Q_sample'; Q_lab recommended if using a strong peaks
                  # profile library from a different sample
-eventFileName = '/SNS/CORELLI/IPTS-18479/nexus/CORELLI_42357.nxs.h5' #Full path to the event nexus file
-peaksFile = '/SNS/CORELLI/IPTS-18479/shared/Natrolite_xpwang/280K/Natrolite_280K_Fdd2_18.3_18.6_6.6.integrate' #Full path to the ISAW peaks file
-UBFile = '/SNS/CORELLI/IPTS-18479/shared/Natrolite_xpwang/280K/Natrolite_280K_Fdd2_18.3_18.6_6.6.mat' #Full path to the ISAW UB file
+eventFileName = '/SNS/TOPAZ/IPTS-18474/data/TOPAZ_26751_event.nxs' #Full path to the event nexus file
+peaksFile = '/SNS/TOPAZ/IPTS-18474/shared/SC100K_useDetCal/26751_Niggli.integrate' #Full path to the ISAW peaks file
+UBFile = '/SNS/TOPAZ/IPTS-18474/shared/SC100K_useDetCal/26751_Niggli.mat' #Full path to the ISAW UB file
 #strongPeakParamsFile = '/SNS/MANDI/shared/ProfileFitting/strongPeakParams_beta_lac_mut_mbvg.pkl' #Full path to pkl file
 strongPeakParamsFile = None
 moderatorCoefficientsFile = '/SNS/MANDI/shared/ProfileFitting/franz_coefficients_2017.dat' #Full path to pkl file
 IntensityCutoff = -500 # Minimum number of counts to not force a profile
-EdgeCutoff = 3 # Pixels within EdgeCutoff from a detector edge will be have a profile forced. Currently for Anger cameras only.
+EdgeCutoff = 10 # Pixels within EdgeCutoff from a detector edge will be have a profile forced. Currently for Anger cameras only.
 FracStop = 0.05 # Fraction of max counts to include in peak selection.
 MinpplFrac = 0.9 # Min fraction of predicted background level to check
 MaxpplFrac = 1.1 # Max fraction of predicted background level to check
-DQMax = 0.25 # Largest total side length (in Angstrom) to consider for profile fitting.
+DQMax = 0.25 # Largest total side length (in Angstrom-1) to consider for profile fitting.
 plotResults = True #Show BVG and ICC Fits separately.
 
 #=================================================================================
@@ -70,7 +71,7 @@ def addInstrumentParameters(peaks_ws):
         SetInstrumentParameter(Workspace='peaks_ws', ParameterName='maxdtBinWidth', ParameterType='Number', Value='15.0')
         SetInstrumentParameter(Workspace='peaks_ws', ParameterName='peakMaskSize', ParameterType='Number', Value='15')
         SetInstrumentParameter(Workspace='peaks_ws', ParameterName='iccB', ParameterType='String', Value='0.001 0.3 0.005')
-        SetInstrumentParameter(Workspace='peaks_ws', ParameterName='iccKConv', ParameterType='String', Value='10.0 800.0 100.0')
+        SetInstrumentParameter(Workspace='peaks_ws', ParameterName='iccKConv', ParameterType='String', Value='10.0 1000.0 500.0')
 
     elif instrumentName == 'CORELLI':
         SetInstrumentParameter(Workspace='peaks_ws', ParameterName='fitConvolvedPeak', ParameterType='Bool', Value='True')
@@ -153,9 +154,24 @@ n_events = Box.getNumEventsArray()
 qMask = ICCFT.getHKLMask(UBMatrix, frac=0.4, dQPixel=DQPixel, dQ=dQ)
 
 iccFitDict = ICCFT.parseConstraints(peaks_ws)
-Y3D, gIDX2, pp_lambda2, params2 = BVGFT.get3DPeak(peak, peaks_ws, box, padeCoefficients,qMask,nTheta=NTheta, nPhi=NPhi, plotResults=plotResults,
+Y3D, gIDX2, pp_lambda2, params2 = BVGFT.get3DPeak(peak, peaks_ws, box, padeCoefficients,qMask,nTheta=NTheta, nPhi=NPhi,
+                                               plotResults=plotResults,
                                                zBG=1.96,fracBoxToHistogram=1.0,bgPolyOrder=1, strongPeakParams=strongPeakParams,
                                                q_frame=q_frame, mindtBinWidth=MindtBinWidth, maxdtBinWidth=MaxdtBinWidth,
                                                pplmin_frac=0.9, pplmax_frac=1.1,forceCutoff=IntensityCutoff,
                                                edgeCutoff=EdgeCutoff, peakMaskSize = 5, figureNumber=2, iccFitDict=iccFitDict)
+
+#Do some annotation
+plt.figure(1)
+ax = plt.gca()
+paramNames = ['alpha', 'beta', 'R', 'T0', 'scale', 'HatWidth', 'KConv', 'bgOffset', 'bgSlope', 'chiSq']
+annotation = ''.join(['%s %4.4f\n'%(a,b) for a,b in zip(paramNames, mtd['fit_Parameters'].column(1))])
+anchored_text = AnchoredText(annotation[:-1],loc=2)
+ax.add_artist(anchored_text)
+plt.title('%s d=%4.4f wl=%4.4f'%(str(peak.getHKL()),peak.getDSpacing(), peak.getWavelength()))
+
 pySlice.simpleSlices(n_events, Y3D)
+
+
+
+
