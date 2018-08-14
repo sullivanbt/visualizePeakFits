@@ -11,6 +11,8 @@ import ICCFitTools as ICCFT
 import BVGFitTools as BVGFT
 import pySlice
 import pickle
+from scipy.ndimage.filters import convolve
+
 
 # These are parameters for fitting.
 qLow = -25  # Lowest value of q for ConvertToMD 
@@ -70,8 +72,8 @@ def addInstrumentParameters(peaks_ws):
         SetInstrumentParameter(Workspace='peaks_ws', ParameterName='mindtBinWidth', ParameterType='Number', Value='2.0')
         SetInstrumentParameter(Workspace='peaks_ws', ParameterName='maxdtBinWidth', ParameterType='Number', Value='15.0')
         SetInstrumentParameter(Workspace='peaks_ws', ParameterName='peakMaskSize', ParameterType='Number', Value='15')
-        SetInstrumentParameter(Workspace='peaks_ws', ParameterName='iccB', ParameterType='String', Value='0.001 0.3 0.005')
-        SetInstrumentParameter(Workspace='peaks_ws', ParameterName='iccKConv', ParameterType='String', Value='10.0 1000.0 500.0')
+        #SetInstrumentParameter(Workspace='peaks_ws', ParameterName='iccB', ParameterType='String', Value='0.001 0.3 0.005')
+        SetInstrumentParameter(Workspace='peaks_ws', ParameterName='iccKConv', ParameterType='String', Value='100.0 1000.0 700.0')
 
     elif instrumentName == 'CORELLI':
         SetInstrumentParameter(Workspace='peaks_ws', ParameterName='fitConvolvedPeak', ParameterType='Bool', Value='True')
@@ -92,7 +94,10 @@ def addInstrumentParameters(peaks_ws):
         #SetInstrumentParameter(Workspace='peaks_ws', ParameterName='iccKConv', ParameterType='String', Value='10.0 800.0 100.0')
 
 
-
+try:
+    print('Current peak is %i'%peakNumber)
+except:
+    pass
 print("Which peak?")
 peakNumber = input()
 
@@ -154,13 +159,34 @@ n_events = Box.getNumEventsArray()
 qMask = ICCFT.getHKLMask(UBMatrix, frac=0.4, dQPixel=DQPixel, dQ=dQ)
 
 iccFitDict = ICCFT.parseConstraints(peaks_ws)
-Y3D, gIDX2, pp_lambda2, params2 = BVGFT.get3DPeak(peak, peaks_ws, box, padeCoefficients,qMask,nTheta=NTheta, nPhi=NPhi,
+Y3D, goodIDX, pp_lambda2, params2 = BVGFT.get3DPeak(peak, peaks_ws, box, padeCoefficients,qMask,nTheta=NTheta, nPhi=NPhi,
                                                plotResults=plotResults,
                                                zBG=1.96,fracBoxToHistogram=1.0,bgPolyOrder=1, strongPeakParams=strongPeakParams,
                                                q_frame=q_frame, mindtBinWidth=MindtBinWidth, maxdtBinWidth=MaxdtBinWidth,
                                                pplmin_frac=0.9, pplmax_frac=1.1,forceCutoff=IntensityCutoff,
                                                edgeCutoff=EdgeCutoff, peakMaskSize = 5, figureNumber=2, iccFitDict=iccFitDict)
 
+#Calcualte I and Sigma I
+neigh_length_m=3
+peakIDX = Y3D/Y3D.max() > 0.05
+intensity = np.sum(Y3D[peakIDX])
+convBox = 1.0*np.ones([neigh_length_m, neigh_length_m,neigh_length_m]) / neigh_length_m**3
+conv_n_events = convolve(n_events,convBox)
+bgIDX = reduce(np.logical_and,[~goodIDX, qMask, conv_n_events>0])
+bgEvents = np.mean(n_events[bgIDX])*np.sum(peakIDX)
+w_events = n_events.copy()
+w_events[w_events==0] = 1
+varFit = np.average((n_events[peakIDX]-Y3D[peakIDX])*(n_events[peakIDX]-Y3D[peakIDX]), weights=(w_events[peakIDX]))
+sigma = np.sqrt(intensity + bgEvents + varFit)
+
+intensityData = np.sum(n_events[peakIDX])
+sigmaData = np.sqrt(intensity + bgEvents + varFit)
+
+peakI = peak.getIntensity()
+peakS = peak.getSigmaIntensity()
+print('Elliptical          : %4.2f +- %4.2f (%4.2f)'%(peakI, peakS, 1.*peakI/peakS))
+print('Profile fitted model: %4.2f +- %4.2f (%4.2f)'%(intensity, sigma, 1.*intensity/sigma))
+print('Profile fitted data : %4.2f +- %4.2f (%4.2f)'%(intensityData, sigmaData, 1.*intensityData/sigmaData))
 #Do some annotation
 plt.figure(1)
 ax = plt.gca()
@@ -170,6 +196,7 @@ anchored_text = AnchoredText(annotation[:-1],loc=2)
 ax.add_artist(anchored_text)
 plt.title('%s d=%4.4f wl=%4.4f'%(str(peak.getHKL()),peak.getDSpacing(), peak.getWavelength()))
 
+#Show interactive slices
 pySlice.simpleSlices(n_events, Y3D)
 
 
