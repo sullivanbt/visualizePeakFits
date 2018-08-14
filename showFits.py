@@ -70,10 +70,10 @@ def addInstrumentParameters(peaks_ws):
         SetInstrumentParameter(Workspace='peaks_ws', ParameterName='fracHKL', ParameterType='Number', Value='0.4')
         SetInstrumentParameter(Workspace='peaks_ws', ParameterName='dQPixel', ParameterType='Number', Value='0.01')
         SetInstrumentParameter(Workspace='peaks_ws', ParameterName='mindtBinWidth', ParameterType='Number', Value='2.0')
-        SetInstrumentParameter(Workspace='peaks_ws', ParameterName='maxdtBinWidth', ParameterType='Number', Value='15.0')
+        SetInstrumentParameter(Workspace='peaks_ws', ParameterName='maxdtBinWidth', ParameterType='Number', Value='8.0')
         SetInstrumentParameter(Workspace='peaks_ws', ParameterName='peakMaskSize', ParameterType='Number', Value='15')
         #SetInstrumentParameter(Workspace='peaks_ws', ParameterName='iccB', ParameterType='String', Value='0.001 0.3 0.005')
-        SetInstrumentParameter(Workspace='peaks_ws', ParameterName='iccKConv', ParameterType='String', Value='100.0 1000.0 700.0')
+        SetInstrumentParameter(Workspace='peaks_ws', ParameterName='iccKConv', ParameterType='String', Value='100.0 10000.0 500.0')
 
     elif instrumentName == 'CORELLI':
         SetInstrumentParameter(Workspace='peaks_ws', ParameterName='fitConvolvedPeak', ParameterType='Bool', Value='True')
@@ -146,6 +146,7 @@ MindtBinWidth = peaks_ws.getInstrument().getNumberParameter("minDTBinWidth")[0]
 MaxdtBinWidth = peaks_ws.getInstrument().getNumberParameter("maxDTBinWidth")[0]
 FracHKL = 0.4 # Fraction of HKL to consider for profile fitting.
 DQPixel = peaks_ws.getInstrument().getNumberParameter("DQPixel")[0]
+peakMaskSize = peaks_ws.getInstrument().getIntParameter("peakMaskSize")[0]
 np.warnings.filterwarnings('ignore') # There can be a lot of warnings for bad solutions.
 
 q_frame = 'lab'
@@ -163,8 +164,8 @@ Y3D, goodIDX, pp_lambda2, params2 = BVGFT.get3DPeak(peak, peaks_ws, box, padeCoe
                                                plotResults=plotResults,
                                                zBG=1.96,fracBoxToHistogram=1.0,bgPolyOrder=1, strongPeakParams=strongPeakParams,
                                                q_frame=q_frame, mindtBinWidth=MindtBinWidth, maxdtBinWidth=MaxdtBinWidth,
-                                               pplmin_frac=0.9, pplmax_frac=1.1,forceCutoff=IntensityCutoff,
-                                               edgeCutoff=EdgeCutoff, peakMaskSize = 5, figureNumber=2, iccFitDict=iccFitDict)
+                                               pplmin_frac=MinpplFrac, pplmax_frac=MaxpplFrac,forceCutoff=IntensityCutoff,
+                                               edgeCutoff=EdgeCutoff, peakMaskSize = peakMaskSize, figureNumber=2, iccFitDict=iccFitDict)
 
 #Calcualte I and Sigma I
 neigh_length_m=3
@@ -180,7 +181,7 @@ varFit = np.average((n_events[peakIDX]-Y3D[peakIDX])*(n_events[peakIDX]-Y3D[peak
 sigma = np.sqrt(intensity + bgEvents + varFit)
 
 intensityData = np.sum(n_events[peakIDX])
-sigmaData = np.sqrt(intensity + bgEvents + varFit)
+sigmaData = np.sqrt(intensityData + bgEvents + varFit)
 
 peakI = peak.getIntensity()
 peakS = peak.getSigmaIntensity()
@@ -188,16 +189,17 @@ print('Elliptical          : %4.2f +- %4.2f (%4.2f)'%(peakI, peakS, 1.*peakI/pea
 print('Profile fitted model: %4.2f +- %4.2f (%4.2f)'%(intensity, sigma, 1.*intensity/sigma))
 print('Profile fitted data : %4.2f +- %4.2f (%4.2f)'%(intensityData, sigmaData, 1.*intensityData/sigmaData))
 #Do some annotation
-plt.figure(1)
-ax = plt.gca()
-paramNames = ['alpha', 'beta', 'R', 'T0', 'scale', 'HatWidth', 'KConv', 'bgOffset', 'bgSlope', 'chiSq']
-annotation = ''.join(['%s %4.4f\n'%(a,b) for a,b in zip(paramNames, mtd['fit_Parameters'].column(1))])
-anchored_text = AnchoredText(annotation[:-1],loc=2)
-ax.add_artist(anchored_text)
-plt.title('%s d=%4.4f wl=%4.4f'%(str(peak.getHKL()),peak.getDSpacing(), peak.getWavelength()))
+if plotResults:
+    plt.figure(1)
+    ax = plt.gca()
+    paramNames = ['alpha', 'beta', 'R', 'T0', 'scale', 'HatWidth', 'KConv', 'bgOffset', 'bgSlope', 'chiSq']
+    annotation = ''.join(['%s %4.4f\n'%(a,b) for a,b in zip(paramNames, mtd['fit_Parameters'].column(1))])
+    anchored_text = AnchoredText(annotation[:-1],loc=2)
+    ax.add_artist(anchored_text)
+    plt.title('%s d=%4.4f wl=%4.4f'%(str(peak.getHKL()),peak.getDSpacing(), peak.getWavelength()))
 
 #Show interactive slices
-pySlice.simpleSlices(n_events, Y3D)
+#pySlice.simpleSlices(n_events, Y3D)
 
 
 
