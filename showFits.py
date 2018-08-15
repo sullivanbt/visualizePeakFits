@@ -199,7 +199,7 @@ if plotResults:
     plt.title('%s d=%4.4f wl=%4.4f'%(str(peak.getHKL()),peak.getDSpacing(), peak.getWavelength()))
 
 #Show interactive slices
-#pySlice.simpleSlices(n_events, Y3D)
+pySlice.simpleSlices(n_events, Y3D)
 
 
 
