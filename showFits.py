@@ -12,6 +12,8 @@ import BVGFitTools as BVGFT
 import pySlice
 import pickle
 from scipy.ndimage.filters import convolve
+reload(BVGFT)
+reload(ICCFT)
 
 
 # These are parameters for fitting.
@@ -19,20 +21,48 @@ qLow = -25  # Lowest value of q for ConvertToMD
 qHigh = 25; # Highest value of q for ConvertToMD
 Q3DFrame='Q_lab' # Either 'Q_lab' or 'Q_sample'; Q_lab recommended if using a strong peaks
                  # profile library from a different sample
-eventFileName = '/SNS/TOPAZ/IPTS-18474/data/TOPAZ_26751_event.nxs' #Full path to the event nexus file
-peaksFile = '/SNS/TOPAZ/IPTS-18474/shared/SC100K_useDetCal/26751_Niggli.integrate' #Full path to the ISAW peaks file
-UBFile = '/SNS/TOPAZ/IPTS-18474/shared/SC100K_useDetCal/26751_Niggli.mat' #Full path to the ISAW UB file
+#Si 2018
+eventFileName = '/SNS/TOPAZ/IPTS-18474/data/TOPAZ_%i_event.nxs' #Full path to the event nexus file
+#peaksFile = '/SNS/TOPAZ/IPTS-18474/shared/SC100K_useDetCal/26763_Niggli.integrate' #Full path to the ISAW peaks file
+#UBFile = '/SNS/TOPAZ/IPTS-18474/shared/SC100K_useDetCal/26763_Niggli.mat' #Full path to the ISAW UB file
+peaksFile = '/SNS/TOPAZ/IPTS-18474/shared/SC100K_useDetCal/SC100K_useDetCal_Monoclinic_C.integrate' #String with ISAW format peaks file to read (*.integrate or *.peaks)
+UBFile = '/SNS/TOPAZ/IPTS-18474/shared/SC100K_useDetCal/SC100K_useDetCal_Monoclinic_C.mat' #String with ISAW format UB (*.mat)
+moderatorCoefficientsFile = '/home/ntv/integrate/bl11_moderatorCoefficients_2018.dat' #Full path to pkl file
+DetCalFile = '/SNS/TOPAZ/shared/calibrations/2018C/TOPAZ_2018C.DetCal'
+
+'''
+#bernhard
+eventFileName = '/SNS/TOPAZ/IPTS-20746/0/27624/NeXus/TOPAZ_27624_event.nxs' #Full path to the event nexus file
+peaksFile = '/SNS/TOPAZ/IPTS-20746/shared/04_KDP_DAC_manual_mantid_raw_files/27624/27624_PList_PP_ref.peaks' #String with ISAW format peaks file to read (*.integrate or *.peaks)
+UBFile = '/SNS/TOPAZ/IPTS-20746/shared/04_KDP_DAC_manual_mantid_raw_files/27624/TOPAZ_27624_UB_KDP.mat' #String with ISAW format UB (*.mat)
+DetCalFile = '/SNS/TOPAZ/IPTS-20746/shared/calibration/TOPAZ_2018B.DetCal'
+moderatorCoefficientsFile = '/home/ntv/integrate/bl11_moderatorCoefficients_2018.dat' #Full path to pkl file
+'''
+'''
+eventFileName = '/SNS/CORELLI/IPTS-18479/nexus/CORELLI_%i.nxs.h5' #Full path to the event nexus file
+peaksFile = '/SNS/CORELLI/IPTS-18479/shared/Natrolite_xpwang/280K/Natrolite_280K_Fdd2_18.3_18.6_6.6.integrate' #String with ISAW format peaks file to read (*.integrate or *.peaks)
+UBFile = '/SNS/CORELLI/IPTS-18479/shared/Natrolite_xpwang/280K/Natrolite_280K_Fdd2_18.3_18.6_6.6.mat' #String with ISAW format UB (*.mat)
+DetCalFile = '/SNS/CORELLI/IPTS-18479/shared/Natrolite_xpwang/calibration/CORELLI_Natrolite_Height_91.DetCal'
+moderatorCoefficientsFile = '/home/ntv/integrate/bl8_moderatorCoefficients.dat' #Full path to pkl file
+'''
+'''
+eventFileName = '/SNS/CORELLI/IPTS-21655/nexus/CORELLI_%i.nxs.h5' #Full path to the event nexus file
+peaksFile = '/home/ntv/corelli_preprocessing/beta_lac_july2018/natrolite_oct2018/81406_Orthorhombic_F.integrate' #String with ISAW format peaks file to read (*.integrate or *.peaks)
+UBFile = '/home/ntv/corelli_preprocessing/beta_lac_july2018/natrolite_oct2018/81406_Orthorhombic_F.mat' #String with ISAW format UB (*.mat)
+DetCalFile = None
+moderatorCoefficientsFile = '/home/ntv/integrate/bl8_moderatorCoefficients.dat' #Full path to pkl file
+'''
 #strongPeakParamsFile = '/SNS/MANDI/shared/ProfileFitting/strongPeakParams_beta_lac_mut_mbvg.pkl' #Full path to pkl file
-strongPeakParamsFile = '/SNS/users/ntv/integrate/strongPeakParams_sc2018.pkl'
+#strongPeakParamsFile = '/SNS/users/ntv/integrate/strongPeakParams_sc2018.pkl'
+#strongPeakParamsFile = '/home/ntv/integrate/strongPeakParams_corelli_natrolite.pkl'
 strongPeakParamsFile = None
 #moderatorCoefficientsFile = '/SNS/MANDI/shared/ProfileFitting/franz_coefficients_2017.dat' #Full path to pkl file
-moderatorCoefficientsFile = '/home/ntv/integrate/bl11_moderatorCoefficients_2018.dat' #Full path to pkl file
 IntensityCutoff = 200 # Profile paramters from a nearby strong Bragg peak will be forced for peaks with counts below IntensityCutoff.
-EdgeCutoff = 10 # Profile parameters from a nearby strong Bragg peak will be forced for peaks within EdgeCutoff of a detector edge.
+EdgeCutoff = 3 # Profile parameters from a nearby strong Bragg peak will be forced for peaks within EdgeCutoff of a detector edge.
 FracStop = 0.05 # Fraction of max counts to include in peak selection.
-MinpplFrac = 0.9 # Min fraction of predicted background level to check
-MaxpplFrac = 1.2 # Max fraction of predicted background level to check
-DQMax = 0.2 # Largest total side length (in Angstrom-1) to consider for profile fitting.
+MinpplFrac = 0.1 # Min fraction of predicted background level to check
+MaxpplFrac = 1.1 # Max fraction of predicted background level to check
+DQMax = 0.15 # Largest total side length (in Angstrom-1) to consider for profile fitting.
 plotResults = True #Show BVG and ICC Fits separately.
 
 #=================================================================================
@@ -69,11 +99,11 @@ def addInstrumentParameters(peaks_ws):
         SetInstrumentParameter(Workspace='peaks_ws', ParameterName='numDetCols', ParameterType='Number', Value='255')
         SetInstrumentParameter(Workspace='peaks_ws', ParameterName='numBinsTheta', ParameterType='Number', Value='50')
         SetInstrumentParameter(Workspace='peaks_ws', ParameterName='numBinsPhi', ParameterType='Number', Value='50')
-        SetInstrumentParameter(Workspace='peaks_ws', ParameterName='fracHKL', ParameterType='Number', Value='0.4')
-        SetInstrumentParameter(Workspace='peaks_ws', ParameterName='dQPixel', ParameterType='Number', Value='0.01')
-        SetInstrumentParameter(Workspace='peaks_ws', ParameterName='mindtBinWidth', ParameterType='Number', Value='2.0')
+        SetInstrumentParameter(Workspace='peaks_ws', ParameterName='fracHKL', ParameterType='Number', Value='0.25')
+        SetInstrumentParameter(Workspace='peaks_ws', ParameterName='dQPixel', ParameterType='Number', Value='0.006')
+        SetInstrumentParameter(Workspace='peaks_ws', ParameterName='mindtBinWidth', ParameterType='Number', Value='4.0')
         SetInstrumentParameter(Workspace='peaks_ws', ParameterName='maxdtBinWidth', ParameterType='Number', Value='15.0')
-        SetInstrumentParameter(Workspace='peaks_ws', ParameterName='peakMaskSize', ParameterType='Number', Value='15')
+        SetInstrumentParameter(Workspace='peaks_ws', ParameterName='peakMaskSize', ParameterType='Number', Value='6')
         #SetInstrumentParameter(Workspace='peaks_ws', ParameterName='iccB', ParameterType='String', Value='0.001 0.3 0.005')
         SetInstrumentParameter(Workspace='peaks_ws', ParameterName='iccKConv', ParameterType='String', Value='10.0 10000.0 400.0')
         #SetInstrumentParameter(Workspace='peaks_ws', ParameterName='iccR', ParameterType='String', Value='0.0 1.0 0.05')
@@ -86,15 +116,15 @@ def addInstrumentParameters(peaks_ws):
         SetInstrumentParameter(Workspace='peaks_ws', ParameterName='numDetCols', ParameterType='Number', Value='16')
         SetInstrumentParameter(Workspace='peaks_ws', ParameterName='numBinsTheta', ParameterType='Number', Value='50')
         SetInstrumentParameter(Workspace='peaks_ws', ParameterName='numBinsPhi', ParameterType='Number', Value='50')
-        SetInstrumentParameter(Workspace='peaks_ws', ParameterName='fracHKL', ParameterType='Number', Value='0.4')
+        SetInstrumentParameter(Workspace='peaks_ws', ParameterName='fracHKL', ParameterType='Number', Value='0.25')
         SetInstrumentParameter(Workspace='peaks_ws', ParameterName='dQPixel', ParameterType='Number', Value='0.007')
-        SetInstrumentParameter(Workspace='peaks_ws', ParameterName='mindtBinWidth', ParameterType='Number', Value='2.0')
+        SetInstrumentParameter(Workspace='peaks_ws', ParameterName='mindtBinWidth', ParameterType='Number', Value='5.0')
         SetInstrumentParameter(Workspace='peaks_ws', ParameterName='maxdtBinWidth', ParameterType='Number', Value='60.0')
         SetInstrumentParameter(Workspace='peaks_ws', ParameterName='peakMaskSize', ParameterType='Number', Value='10')
         #SetInstrumentParameter(Workspace='peaks_ws', ParameterName='iccA', ParameterType='String', Value='0.25 0.75 0.5')
         #SetInstrumentParameter(Workspace='peaks_ws', ParameterName='iccB', ParameterType='String', Value='0.001 0.3 0.005')
         #SetInstrumentParameter(Workspace='peaks_ws', ParameterName='iccR', ParameterType='String', Value='0.05 1. 0.1')
-        #SetInstrumentParameter(Workspace='peaks_ws', ParameterName='iccKConv', ParameterType='String', Value='10.0 800.0 100.0')
+        SetInstrumentParameter(Workspace='peaks_ws', ParameterName='iccKConv', ParameterType='String', Value='10.0 10000.0 250.0')
 
 
 try:
@@ -124,7 +154,9 @@ for ws in mtd.getObjectNames():
         importFlag = False
         break
 if importFlag:
-    event_ws = Load(Filename=eventFileName, OutputWorkspace='event_ws')
+    event_ws = Load(Filename=eventFileName%(peaks_ws.getPeak(peakNumber).getRunNumber()), OutputWorkspace='event_ws')
+    if DetCalFile is not None:
+        LoadIsawDetCal(InputWorkspace='event_ws', Filename=DetCalFile)
     MDdata = ConvertToMD(InputWorkspace='event_ws',  QDimensions='Q3D', dEAnalysisMode='Elastic',
                              Q3DFrames=Q3DFrame, QConversionScales='Q in A^-1',
                              MinValues='%f, %f, %f' % (qLow, qLow, qLow), Maxvalues='%f, %f, %f' % (qHigh, qHigh, qHigh), MaxRecursionDepth=10,
@@ -143,11 +175,11 @@ else:
     strongPeakParams = pickle.load(open(strongPeakParamsFile, 'rb'))
 
 padeCoefficients = ICCFT.getModeratorCoefficients(moderatorCoefficientsFile)
-NTheta = peaks_ws.getInstrument().getIntParameter("numBinsTheta")[0]
-NPhi = peaks_ws.getInstrument().getIntParameter("numBinsPhi")[0]
+NTheta = 50#peaks_ws.getInstrument().getIntParameter("numBinsTheta")[0]
+NPhi = 50#peaks_ws.getInstrument().getIntParameter("numBinsPhi")[0]
 MindtBinWidth = peaks_ws.getInstrument().getNumberParameter("minDTBinWidth")[0]
 MaxdtBinWidth = peaks_ws.getInstrument().getNumberParameter("maxDTBinWidth")[0]
-FracHKL = 0.4 # Fraction of HKL to consider for profile fitting.
+FracHKL = peaks_ws.getInstrument().getNumberParameter("fracHKL")[0] # Fraction of HKL to consider for profile fitting.
 DQPixel = peaks_ws.getInstrument().getNumberParameter("DQPixel")[0]
 peakMaskSize = peaks_ws.getInstrument().getIntParameter("peakMaskSize")[0]
 np.warnings.filterwarnings('ignore') # There can be a lot of warnings for bad solutions.
@@ -188,7 +220,8 @@ sigmaData = np.sqrt(intensityData + bgEvents + varFit)
 
 peakI = peak.getIntensity()
 peakS = peak.getSigmaIntensity()
-print('Elliptical          : %4.2f +- %4.2f (%4.2f)'%(peakI, peakS, 1.*peakI/peakS))
+try:  print('Elliptical          : %4.2f +- %4.2f (%4.2f)'%(peakI, peakS, 1.*peakI/peakS))
+except:  print('Elliptical          : %4.2f +- %4.2f (%4.2f)'%(peakI, peakS, np.inf))
 print('Profile fitted model: %4.2f +- %4.2f (%4.2f)'%(intensity, sigma, 1.*intensity/sigma))
 print('Profile fitted data : %4.2f +- %4.2f (%4.2f)'%(intensityData, sigmaData, 1.*intensityData/sigmaData))
 #Do some annotation
@@ -203,7 +236,7 @@ if plotResults:
     plt.title('%s d=%4.4f wl=%4.4f'%(str(peak.getHKL()),peak.getDSpacing(), peak.getWavelength()))
 
 #Show interactive slices
-pySlice.simpleSlices(n_events, Y3D)
+#pySlice.simpleSlices(n_events, Y3D)
 
 
 

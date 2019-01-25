@@ -129,7 +129,12 @@ def get3DPeak(peak, peaks_ws, box, padeCoefficients, qMask, nTheta=150, nPhi=150
             figNumber=figureNumber)
 
     # set up the BVG
-    # A = params[0][0]  # never used
+    XTOF = X[:, :, :, 0]
+    XTHETA = X[:, :, :, 1]
+    XPHI = X[:, :, :, 2]
+
+    # First BVG
+    A = params[0][0]  # never used
     mu0 = params[0][1]
     mu1 = params[0][2]
     sigX = params[0][3]
@@ -138,19 +143,45 @@ def get3DPeak(peak, peaks_ws, box, padeCoefficients, qMask, nTheta=150, nPhi=150
     bgBVG = params[0][6]
     sigma = np.array([[sigX**2, p * sigX * sigY], [p * sigX * sigY, sigY**2]])
     mu = np.array([mu0, mu1])
+    YBVG_1 = bvg(A, mu, sigma, XTHETA, XPHI, 0)
 
-    XTOF = X[:, :, :, 0]
-    XTHETA = X[:, :, :, 1]
-    XPHI = X[:, :, :, 2]
+    # Second BVG
+    A_2 = params[0][7+0]  # never used
+    mu0_2 = params[0][7+1]
+    mu1_2 = params[0][7+2]
+    sigX_2 = params[0][7+3]
+    sigY_2 = params[0][7+4]
+    p_2 = params[0][7+5]
+    bgBVG_2 = params[0][7+6]
+    sigma_2 = np.array([[sigX_2**2, p_2 * sigX_2 * sigY_2], [p_2 * sigX_2 * sigY_2, sigY_2**2]])
+    mu_2 = np.array([mu0_2, mu1_2]) 
+    YBVG_2 = bvg(A_2, mu_2, sigma_2, XTHETA, XPHI, 0)
 
-    YBVG = bvg(1.0, mu, sigma, XTHETA, XPHI, 0)
+    print('!!!!!')
+    print(params)
+
+    # Second BVG
+    A_3 = params[0][2*7+0]  # never used
+    mu0_3 = params[0][2*7+1]
+    mu1_3 = params[0][2*7+2]
+    sigX_3 = params[0][2*7+3]
+    sigY_3 = params[0][2*7+4]
+    p_3 = params[0][2*7+5]
+    bgBVG_3 = params[0][2*7+6]
+    sigma_3 = np.array([[sigX_3**2, p_3 * sigX_3 * sigY_3], [p_3 * sigX_3 * sigY_3, sigY_3**2]])
+    mu_3 = np.array([mu0_3, mu1_3])
+    YBVG_3 = bvg(A_3, mu_3, sigma_3, XTHETA, XPHI, 0)  
+
+
+
+    YBVG = YBVG_1 + YBVG_2 + YBVG_3
 
     # Do scaling to the data
     if doPeakConvolution: #This means peaks will have gaps, so we only use good data to scale
         Y, redChiSq, scaleFactor = fitScaling(n_events, box, YTOF, YBVG, goodIDX=goodIDX)
     else:
         Y, redChiSq, scaleFactor = fitScaling(n_events, box, YTOF, YBVG)
-    YBVG2 = bvg(1.0, mu, sigma, XTHETA, XPHI, 0)
+    YBVG2 = bvg(A, mu, sigma, XTHETA, XPHI, 0) + bvg(A_2, mu_2, sigma_2, XTHETA, XPHI, 0) +  bvg(A_3, mu_3, sigma_3, XTHETA, XPHI, 0)
     YTOF2 = getYTOF(fICC, XTOF, x_lims)
     Y2 = YTOF2 * YBVG2
     Y2 = scaleFactor * Y2 / Y2.max()
@@ -390,8 +421,13 @@ def compareBVGFitData(box, params, nTheta=200, nPhi=200, figNumber=2, fracBoxToH
     '''
     h, thBins, phBins = getAngularHistogram(
         box, nTheta=nTheta, nPhi=nPhi, fracBoxToHistogram=fracBoxToHistogram, useIDX=useIDX)
-    Y = getBVGResult(box, params, nTheta=nTheta, nPhi=nPhi,
+    Y1 = getBVGResult(box, params, nTheta=nTheta, nPhi=nPhi,
                      fracBoxToHistogram=fracBoxToHistogram)
+    Y2 = getBVGResult(box, params[7:], nTheta=nTheta, nPhi=nPhi,
+                     fracBoxToHistogram=fracBoxToHistogram)
+    Y3 = getBVGResult(box, params[14:], nTheta=nTheta, nPhi=nPhi,
+                     fracBoxToHistogram=fracBoxToHistogram)
+    Y = Y1 + Y2 + Y3
     pLow = 0.0
     pHigh = 1.0
     nX, nY = Y.shape
@@ -516,19 +552,64 @@ def doBVGFit(box, nTheta=200, nPhi=200, zBG=1.96, fracBoxToHistogram=1.0, goodID
         #m['MuY'] = meanPH
         m['MuX'] = TH[np.unravel_index(h.argmax(), h.shape)]
         m['MuY'] = PH[np.unravel_index(h.argmax(), h.shape)]
-        m['SigX'] = sigX0
-        m['SigY'] = sigY0
-        m['SigP'] = sigP0
+        m['SigX'] = 0.007
+        m['SigY'] = 0.0025
+        m['SigP'] = 0.0
         m.setAttributeValue('nX', h.shape[0])
         m.setAttributeValue('nY', h.shape[1])
         m.setConstraints(boundsDict)
 
+        n = BivariateGaussian.BivariateGaussian()
+        n.init()
+        n['A'] = 1.
+        dTH = (TH.max() - TH.mean()) / h.shape[0] 
+        dPH = (PH.max() - PH.mean()) / h.shape[1] 
+        n['MuX'] = TH[np.unravel_index(h.argmax(), h.shape)]-dTH*0
+        n['MuY'] = PH[np.unravel_index(h.argmax(), h.shape)]+dPH*6
+        n['SigX'] = 0.004
+        n['SigY'] = 0.003
+        n['SigP'] = 0.0
+        n.setAttributeValue('nX', h.shape[0])
+        n.setAttributeValue('nY', h.shape[1])
+        n.setConstraints(boundsDict)
+
+        nn = BivariateGaussian.BivariateGaussian()
+        nn.init()
+        nn['A'] = 1.
+        dTH = (TH.max() - TH.mean()) / h.shape[0] 
+        dPH = (PH.max() - PH.mean()) / h.shape[1] 
+        nn['MuX'] = TH[np.unravel_index(h.argmax(), h.shape)]-dTH*0
+        nn['MuY'] = PH[np.unravel_index(h.argmax(), h.shape)]-dPH*6
+        nn['SigX'] = 0.004
+        nn['SigY'] = 0.003
+        nn['SigP'] = 0.0
+        nn.setAttributeValue('nX', h.shape[0])
+        nn.setAttributeValue('nY', h.shape[1])
+        nn.setConstraints(boundsDict)
+
+
+        plt.figure(20); plt.clf()
+        yyym = getBVGResult(box, [m['A'], m['MuX'], m['MuY'], m['SigX'], m['SigY'], m['SigP'], 0.0] , nTheta=h.shape[0], nPhi=h.shape[1], fracBoxToHistogram=1.0)
+        yyyn = getBVGResult(box, [n['A'], n['MuX'], n['MuY'], n['SigX'], n['SigY'], n['SigP'], 0.0] , nTheta=h.shape[0], nPhi=h.shape[1], fracBoxToHistogram=1.0)
+        yyynn = getBVGResult(box, [nn['A'], nn['MuX'], nn['MuY'], nn['SigX'], nn['SigY'], nn['SigP'], 0.0] , 
+                             nTheta=h.shape[0], nPhi=h.shape[1], fracBoxToHistogram=1.0)
+        plt.subplot(2,2,1); plt.imshow(yyym)
+        plt.subplot(2,2,2); plt.imshow(yyyn)
+        plt.subplot(2,2,3); plt.imshow(yyynn)
+        rgb = np.zeros([yyym.shape[0], yyym.shape[1], 3])
+        rgb[:,:,0] = yyym
+        rgb[:,:,1] = yyyn
+        rgb[:,:,2] = yyynn
+        plt.subplot(2,2,4); plt.imshow(rgb)
+        plt.suptitle('Before')
+
+        m = FunctionWrapper(m) + FunctionWrapper(n) + FunctionWrapper(nn)
         # Do the fit
         #bvgWS = CreateWorkspace(OutputWorkspace='bvgWS', DataX=pos.ravel(
         #), DataY=H.ravel(), DataE=np.sqrt(H.ravel()))
         bvgWS = CreateWorkspace(OutputWorkspace='bvgWS', DataX=pos.ravel(
         ), DataY=H.ravel(), DataE=np.sqrt(H.ravel()))
-
+        print('before: ', str(m))
         fitResults = Fit(Function=m, InputWorkspace='bvgWS', Output='bvgfit',
                          Minimizer='Levenberg-MarquardtMD')
     elif forceParams is not None:
@@ -602,6 +683,10 @@ def doBVGFit(box, nTheta=200, nPhi=200, zBG=1.96, fracBoxToHistogram=1.0, goodID
     # Recover the result
     m = BivariateGaussian.BivariateGaussian()
     m.init()
+    n = BivariateGaussian.BivariateGaussian()
+    n.init()
+    nn = BivariateGaussian.BivariateGaussian()
+    nn.init()
     m['A'] = mtd['bvgfit_Parameters'].row(0)['Value']
     m['MuX'] = mtd['bvgfit_Parameters'].row(1)['Value']
     m['MuY'] = mtd['bvgfit_Parameters'].row(2)['Value']
@@ -609,12 +694,51 @@ def doBVGFit(box, nTheta=200, nPhi=200, zBG=1.96, fracBoxToHistogram=1.0, goodID
     m['SigY'] = mtd['bvgfit_Parameters'].row(4)['Value']
     m['SigP'] = mtd['bvgfit_Parameters'].row(5)['Value']
     m['Bg'] = mtd['bvgfit_Parameters'].row(6)['Value']
+    n['A'] = mtd['bvgfit_Parameters'].row(7+0)['Value']
+    n['MuX'] = mtd['bvgfit_Parameters'].row(7+1)['Value']
+    n['MuY'] = mtd['bvgfit_Parameters'].row(7+2)['Value']
+    n['SigX'] = mtd['bvgfit_Parameters'].row(7+3)['Value']
+    n['SigY'] = mtd['bvgfit_Parameters'].row(7+4)['Value']
+    n['SigP'] = mtd['bvgfit_Parameters'].row(7+5)['Value']
+    n['Bg'] = mtd['bvgfit_Parameters'].row(7+6)['Value']
+    nn['A'] = mtd['bvgfit_Parameters'].row(2*7+0)['Value']
+    nn['MuX'] = mtd['bvgfit_Parameters'].row(2*7+1)['Value']
+    nn['MuY'] = mtd['bvgfit_Parameters'].row(2*7+2)['Value']
+    nn['SigX'] = mtd['bvgfit_Parameters'].row(2*7+3)['Value']
+    nn['SigY'] = mtd['bvgfit_Parameters'].row(2*7+4)['Value']
+    nn['SigP'] = mtd['bvgfit_Parameters'].row(2*7+5)['Value']
+    nn['Bg'] = mtd['bvgfit_Parameters'].row(2*7+6)['Value']
+
+
 
     m.setAttributeValue('nX', h.shape[0])
     m.setAttributeValue('nY', h.shape[1])
+    n.setAttributeValue('nX', h.shape[0])
+    n.setAttributeValue('nY', h.shape[1])
+    nn.setAttributeValue('nX', h.shape[0])
+    nn.setAttributeValue('nY', h.shape[1])
     chiSq = fitResults[1]
     params = [[m['A'], m['MuX'], m['MuY'], m['SigX'],
-               m['SigY'], m['SigP'], m['Bg']], chiSq]
+               m['SigY'], m['SigP'], m['Bg'],
+               n['A'], n['MuX'], n['MuY'], n['SigX'],
+               n['SigY'], n['SigP'], n['Bg'],
+               nn['A'], nn['MuX'], nn['MuY'], nn['SigX'],
+               nn['SigY'], nn['SigP'], nn['Bg']], chiSq]
+
+    print('after:')
+    print(str(m))
+    print(str(n))
+    print(str(nn))
+    plt.figure(21); plt.clf()
+    yyym = getBVGResult(box, [m['A'], m['MuX'], m['MuY'], m['SigX'], m['SigY'], m['SigP'], 0.0] , nTheta=h.shape[0], nPhi=h.shape[1], fracBoxToHistogram=1.0)
+    yyyn = getBVGResult(box, [n['A'], n['MuX'], n['MuY'], n['SigX'], n['SigY'], n['SigP'], 0.0] , nTheta=h.shape[0], nPhi=h.shape[1], fracBoxToHistogram=1.0)
+    yyynn = getBVGResult(box, [nn['A'], nn['MuX'], nn['MuY'], nn['SigX'], nn['SigY'], nn['SigP'], 0.0] , nTheta=h.shape[0], nPhi=h.shape[1], fracBoxToHistogram=1.0)
+    plt.subplot(2,2,1); plt.imshow(yyym)
+    plt.subplot(2,2,2); plt.imshow(yyyn)
+    plt.subplot(2,2,3); plt.imshow(yyym+yyyn+yyynn)
+    plt.subplot(2,2,4); plt.imshow(h)
+    plt.suptitle('after')
+
     return params, h, thBins, phBins
 
 

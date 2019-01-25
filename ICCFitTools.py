@@ -20,11 +20,13 @@ def parseConstraints(peaks_ws):
     for an example).
     """
     possibleKeys = ['iccA', 'iccB', 'iccR', 'iccT0', 'iccScale0', 'iccHatWidth', 'iccKConv']
+    possibleKeys = ['iccKConv']
     d = {}
     for paramName in possibleKeys:
         if peaks_ws.getInstrument().hasParameter(paramName):
             vals = np.array(peaks_ws.getInstrument().getStringParameter(paramName)[0].split(),dtype=float)
             d[paramName] = vals
+    print(d)
     return d
 
 
@@ -283,6 +285,7 @@ def getOptimizedGoodIDX(n_events, padeCoefficients, zBG=1.96, neigh_length_m=3, 
     pp_lambda_toCheck = pp_lambda_toCheck[pp_lambda_toCheck > minppl]
     pp_lambda_toCheck = pp_lambda_toCheck[pp_lambda_toCheck < maxppl]
 
+    print(pp_lambda_toCheck, pred_ppl)
     chiSqList = 1.0e30*np.ones_like(pp_lambda_toCheck)
     ISIGList = 1.0e-30*np.ones_like(pp_lambda_toCheck)
     IList = 1.0e-30*np.ones_like(pp_lambda_toCheck)
@@ -907,6 +910,7 @@ def doICCFit(tofWS, energy, flightPath, padeCoefficients, constraintScheme=None,
         bg['A'+str(fitOrder-i)] = bgx0[i]
     bg.constrain('-1.0 < A%i < 1.0' % fitOrder)
     fitFun = f + bg
+    print(fitFun)
     fitResults = Fit(Function=fitFun, InputWorkspace='tofWS',
                      Output=outputWSName)
     return fitResults, fICC
