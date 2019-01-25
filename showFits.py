@@ -199,7 +199,7 @@ Y3D, goodIDX, pp_lambda2, params2 = BVGFT.get3DPeak(peak, peaks_ws, box, padeCoe
                                                plotResults=plotResults,
                                                zBG=1.96,fracBoxToHistogram=1.0,bgPolyOrder=1, strongPeakParams=strongPeakParams,
                                                q_frame=q_frame, mindtBinWidth=MindtBinWidth, maxdtBinWidth=MaxdtBinWidth,
-                                               pplmin_frac=MinpplFrac, pplmax_frac=MaxpplFrac,forceCutoff=IntensityCutoff,
+                                               pplmin_frac=MinpplFrac, pplmax_frac=MaxpplFrac,forceCutoff=IntensityCutoff, numBVGs=3,
                                                edgeCutoff=EdgeCutoff, peakMaskSize = peakMaskSize, figureNumber=2, iccFitDict=iccFitDict)
 
 #Calcualte I and Sigma I
