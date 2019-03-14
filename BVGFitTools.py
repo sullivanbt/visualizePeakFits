@@ -188,7 +188,7 @@ def get3DPeak(peak, peaks_ws, box, padeCoefficients, qMask, nTheta=150, nPhi=150
     retParams['dQ'] = np.linalg.norm(newCenter - q0)
     retParams['newQ'] = newCenter
 
-    return Y2, goodIDX, pp_lambda, retParams
+    return Y2, goodIDX, pp_lambda, retParams, YTOF2, YBVG2
 
 
 def boxToTOFThetaPhi(box, peak):

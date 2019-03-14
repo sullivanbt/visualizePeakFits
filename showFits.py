@@ -107,8 +107,8 @@ def addInstrumentParameters(peaks_ws):
         SetInstrumentParameter(Workspace='peaks_ws', ParameterName='sigY0Scale', ParameterType='Number', Value='3.0')
         SetInstrumentParameter(Workspace='peaks_ws', ParameterName='numDetRows', ParameterType='Number', Value='255')
         SetInstrumentParameter(Workspace='peaks_ws', ParameterName='numDetCols', ParameterType='Number', Value='255')
-        SetInstrumentParameter(Workspace='peaks_ws', ParameterName='numBinsTheta', ParameterType='Number', Value='35')
-        SetInstrumentParameter(Workspace='peaks_ws', ParameterName='numBinsPhi', ParameterType='Number', Value='35')
+        SetInstrumentParameter(Workspace='peaks_ws', ParameterName='numBinsTheta', ParameterType='Number', Value='50')
+        SetInstrumentParameter(Workspace='peaks_ws', ParameterName='numBinsPhi', ParameterType='Number', Value='50')
         SetInstrumentParameter(Workspace='peaks_ws', ParameterName='fracHKL', ParameterType='Number', Value='0.25')
         SetInstrumentParameter(Workspace='peaks_ws', ParameterName='dQPixel', ParameterType='Number', Value='0.006')
         SetInstrumentParameter(Workspace='peaks_ws', ParameterName='mindtBinWidth', ParameterType='Number', Value='4.0')
@@ -209,11 +209,11 @@ def getLogDQPixel(peak, dtOverTRatio=0.004):
     dq_i = dq/np.sqrt(3)
     return dq_i
 
-DQPixel = getLogDQPixel(peak, dtOverTRatio=0.004)
 
 q_frame = 'lab'
 #Get some peak variables
 peak = peaks_ws.getPeak(peakNumber)
+DQPixel = getLogDQPixel(peak, dtOverTRatio=0.004)
 Box = ICCFT.getBoxFracHKL(peak, peaks_ws, MDdata, UBMatrix, peakNumber, dQ, fracHKL=0.5, dQPixel=DQPixel,  q_frame=q_frame)
 box = Box
 #Set up our filters
@@ -222,7 +222,7 @@ n_events = Box.getNumEventsArray()
 
 
 iccFitDict = ICCFT.parseConstraints(peaks_ws)
-Y3D, goodIDX, pp_lambda2, params2 = BVGFT.get3DPeak(peak, peaks_ws, box, padeCoefficients,qMask,nTheta=NTheta, nPhi=NPhi,
+Y3D, goodIDX, pp_lambda2, params2, YTOF, YBVG = BVGFT.get3DPeak(peak, peaks_ws, box, padeCoefficients,qMask,nTheta=NTheta, nPhi=NPhi,
                                                plotResults=plotResults,
                                                zBG=1.96,fracBoxToHistogram=1.0,bgPolyOrder=1, strongPeakParams=strongPeakParams,
                                                q_frame=q_frame, mindtBinWidth=MindtBinWidth, maxdtBinWidth=MaxdtBinWidth,
