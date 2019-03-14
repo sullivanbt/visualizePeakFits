@@ -36,7 +36,7 @@ eventFileName = '/SNS/TOPAZ/IPTS-21677/nexus/TOPAZ_%i.nxs.h5' #Full path to the 
 #UBFile = '/SNS/TOPAZ/IPTS-18474/shared/SC100K_useDetCal/26763_Niggli.mat' #Full path to the ISAW UB file
 peaksFile = '/SNS/TOPAZ/IPTS-21677/shared/2019A/Si_useDetCal_32712-32730/32712_Niggli.integrate' #String with ISAW format peaks file to read (*.integrate or *.peaks)
 UBFile = '/SNS/TOPAZ/IPTS-21677/shared/2019A/Si_useDetCal_32712-32730/32712_Niggli.mat' #String with ISAW format UB (*.mat)
-moderatorCoefficientsFile = '/home/ntv/integrate/bl11_moderatorCoefficients_2018.dat' #Full path to pkl file
+moderatorCoefficientsFile = '/SNS/TOPAZ/shared/ProfileFitting/bl11_moderatorCoefficients_2018.dat' #Full path to pkl file
 DetCalFile = '/SNS/TOPAZ/IPTS-21677/shared/2019A/Calibration/TOPAZ_2019A.DetCal'
 
 
