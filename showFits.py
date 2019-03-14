@@ -72,7 +72,7 @@ EdgeCutoff = 3 # Profile parameters from a nearby strong Bragg peak will be forc
 FracStop = 0.05 # Fraction of max counts to include in peak selection.
 MinpplFrac = 0.1 # Min fraction of predicted background level to check
 MaxpplFrac = 1.1 # Max fraction of predicted background level to check
-DQMax = 0.15 # Largest total side length (in Angstrom-1) to consider for profile fitting.
+DQMax = 0.5 # Largest total side length (in Angstrom-1) to consider for profile fitting.
 plotResults = True #Show BVG and ICC Fits separately.
 
 #=================================================================================
@@ -107,12 +107,12 @@ def addInstrumentParameters(peaks_ws):
         SetInstrumentParameter(Workspace='peaks_ws', ParameterName='sigY0Scale', ParameterType='Number', Value='3.0')
         SetInstrumentParameter(Workspace='peaks_ws', ParameterName='numDetRows', ParameterType='Number', Value='255')
         SetInstrumentParameter(Workspace='peaks_ws', ParameterName='numDetCols', ParameterType='Number', Value='255')
-        SetInstrumentParameter(Workspace='peaks_ws', ParameterName='numBinsTheta', ParameterType='Number', Value='50')
-        SetInstrumentParameter(Workspace='peaks_ws', ParameterName='numBinsPhi', ParameterType='Number', Value='50')
+        SetInstrumentParameter(Workspace='peaks_ws', ParameterName='numBinsTheta', ParameterType='Number', Value='35')
+        SetInstrumentParameter(Workspace='peaks_ws', ParameterName='numBinsPhi', ParameterType='Number', Value='35')
         SetInstrumentParameter(Workspace='peaks_ws', ParameterName='fracHKL', ParameterType='Number', Value='0.25')
         SetInstrumentParameter(Workspace='peaks_ws', ParameterName='dQPixel', ParameterType='Number', Value='0.006')
         SetInstrumentParameter(Workspace='peaks_ws', ParameterName='mindtBinWidth', ParameterType='Number', Value='4.0')
-        SetInstrumentParameter(Workspace='peaks_ws', ParameterName='maxdtBinWidth', ParameterType='Number', Value='15.0')
+        SetInstrumentParameter(Workspace='peaks_ws', ParameterName='maxdtBinWidth', ParameterType='Number', Value='100.0')
         SetInstrumentParameter(Workspace='peaks_ws', ParameterName='peakMaskSize', ParameterType='Number', Value='6')
         #SetInstrumentParameter(Workspace='peaks_ws', ParameterName='iccB', ParameterType='String', Value='0.001 0.3 0.005')
         SetInstrumentParameter(Workspace='peaks_ws', ParameterName='iccKConv', ParameterType='String', Value='10.0 10000.0 400.0')
@@ -185,14 +185,31 @@ else:
     strongPeakParams = pickle.load(open(strongPeakParamsFile, 'rb'))
 
 padeCoefficients = ICCFT.getModeratorCoefficients(moderatorCoefficientsFile)
-NTheta = 50#peaks_ws.getInstrument().getIntParameter("numBinsTheta")[0]
-NPhi = 50#peaks_ws.getInstrument().getIntParameter("numBinsPhi")[0]
+NTheta = peaks_ws.getInstrument().getIntParameter("numBinsTheta")[0]
+NPhi = peaks_ws.getInstrument().getIntParameter("numBinsPhi")[0]
 MindtBinWidth = peaks_ws.getInstrument().getNumberParameter("minDTBinWidth")[0]
 MaxdtBinWidth = peaks_ws.getInstrument().getNumberParameter("maxDTBinWidth")[0]
 FracHKL = peaks_ws.getInstrument().getNumberParameter("fracHKL")[0] # Fraction of HKL to consider for profile fitting.
 DQPixel = peaks_ws.getInstrument().getNumberParameter("DQPixel")[0]
 peakMaskSize = peaks_ws.getInstrument().getIntParameter("peakMaskSize")[0]
 np.warnings.filterwarnings('ignore') # There can be a lot of warnings for bad solutions.
+
+def getLogDQPixel(peak, dtOverTRatio=0.004):
+    flightPath = peak.getL1()+peak.getL2()
+    scatteringHalfAngle = 0.5*peak.getScattering()
+    tScale = 3176.507 #Constant for conversion
+    TOF = peak.getTOF()
+    q0 = peak.getQLabFrame()
+    t = tScale*flightPath*np.sin(scatteringHalfAngle)/np.linalg.norm(q0)
+
+    magq0 = np.linalg.norm(q0)
+    magq2 = 1./(dtOverTRatio*TOF/tScale/flightPath/np.sin(scatteringHalfAngle) + 1./magq0)
+
+    dq = np.abs(magq2 - magq0)
+    dq_i = dq/np.sqrt(3)
+    return dq_i
+
+DQPixel = getLogDQPixel(peak, dtOverTRatio=0.004)
 
 q_frame = 'lab'
 #Get some peak variables
