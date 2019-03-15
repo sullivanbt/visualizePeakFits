@@ -115,7 +115,7 @@ def addInstrumentParameters(peaks_ws):
         SetInstrumentParameter(Workspace='peaks_ws', ParameterName='maxdtBinWidth', ParameterType='Number', Value='100.0')
         SetInstrumentParameter(Workspace='peaks_ws', ParameterName='peakMaskSize', ParameterType='Number', Value='6')
         #SetInstrumentParameter(Workspace='peaks_ws', ParameterName='iccB', ParameterType='String', Value='0.001 0.3 0.005')
-        SetInstrumentParameter(Workspace='peaks_ws', ParameterName='iccKConv', ParameterType='String', Value='10.0 10000.0 400.0')
+        SetInstrumentParameter(Workspace='peaks_ws', ParameterName='iccKConv', ParameterType='String', Value='10.0 10000.0 600.0')
         #SetInstrumentParameter(Workspace='peaks_ws', ParameterName='iccR', ParameterType='String', Value='0.0 1.0 0.05')
 
     elif instrumentName == 'CORELLI':
@@ -124,8 +124,8 @@ def addInstrumentParameters(peaks_ws):
         SetInstrumentParameter(Workspace='peaks_ws', ParameterName='sigY0Scale', ParameterType='Number', Value='2.0')
         SetInstrumentParameter(Workspace='peaks_ws', ParameterName='numDetRows', ParameterType='Number', Value='255')
         SetInstrumentParameter(Workspace='peaks_ws', ParameterName='numDetCols', ParameterType='Number', Value='16')
-        SetInstrumentParameter(Workspace='peaks_ws', ParameterName='numBinsTheta', ParameterType='Number', Value='50')
-        SetInstrumentParameter(Workspace='peaks_ws', ParameterName='numBinsPhi', ParameterType='Number', Value='50')
+        SetInstrumentParameter(Workspace='peaks_ws', ParameterName='numBinsTheta', ParameterType='Number', Value='35')
+        SetInstrumentParameter(Workspace='peaks_ws', ParameterName='numBinsPhi', ParameterType='Number', Value='35')
         SetInstrumentParameter(Workspace='peaks_ws', ParameterName='fracHKL', ParameterType='Number', Value='0.25')
         SetInstrumentParameter(Workspace='peaks_ws', ParameterName='dQPixel', ParameterType='Number', Value='0.007')
         SetInstrumentParameter(Workspace='peaks_ws', ParameterName='mindtBinWidth', ParameterType='Number', Value='5.0')
@@ -211,9 +211,13 @@ def getLogDQPixel(peak, dtOverTRatio=0.004):
 
 
 q_frame = 'lab'
+
 #Get some peak variables
 peak = peaks_ws.getPeak(peakNumber)
-DQPixel = getLogDQPixel(peak, dtOverTRatio=0.004)
+DQPixel = getLogDQPixel(peak, dtOverTRatio=0.000801494*peak.getDSpacing()+0.002735715)/2.
+k0 = 0.4349929*peak.getTOF()-1321.5459
+SetInstrumentParameter(Workspace='peaks_ws', ParameterName='iccKConv', ParameterType='String', Value='10.0 10000.0 %4.2f'%k0)
+
 Box = ICCFT.getBoxFracHKL(peak, peaks_ws, MDdata, UBMatrix, peakNumber, dQ, fracHKL=0.5, dQPixel=DQPixel,  q_frame=q_frame)
 box = Box
 #Set up our filters
@@ -226,7 +230,7 @@ Y3D, goodIDX, pp_lambda2, params2, YTOF, YBVG = BVGFT.get3DPeak(peak, peaks_ws, 
                                                plotResults=plotResults,
                                                zBG=1.96,fracBoxToHistogram=1.0,bgPolyOrder=1, strongPeakParams=strongPeakParams,
                                                q_frame=q_frame, mindtBinWidth=MindtBinWidth, maxdtBinWidth=MaxdtBinWidth,
-                                               pplmin_frac=MinpplFrac, pplmax_frac=MaxpplFrac,forceCutoff=IntensityCutoff, numBVGs=3,
+                                               pplmin_frac=MinpplFrac, pplmax_frac=MaxpplFrac,forceCutoff=IntensityCutoff, numBVGs=2,
                                                edgeCutoff=EdgeCutoff, peakMaskSize = peakMaskSize, figureNumber=2, iccFitDict=iccFitDict)
 
 #Calcualte I and Sigma I

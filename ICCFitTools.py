@@ -647,6 +647,11 @@ def getTOFWS(box, flightPath, scatteringHalfAngle, tofPeak, peak, qMask, zBG=-1.
     dtBinWidth = max(mindtBinWidth, dtBinWidth)
     dtBinWidth = min(maxdtBinWidth, dtBinWidth)
     tBins = np.arange(tMin, tMax, dtBinWidth)
+    dtOverTRatio = (0.000801494*peak.getDSpacing()+0.002735715) / 2.
+    if peak.getInitialEnergy() < 140:
+        dtOverTRatio /= 2.
+    nnBins = (tMax-tMin)/dtOverTRatio/peak.getTOF()
+    tBins = np.logspace(np.log10(tMin), np.log10(tMax), nnBins)
     weightList = n_events[hasEventsIDX]  # - pp_lambda
     h = np.histogram(tList, tBins, weights=weightList)
     # For and plot the TOF distribution

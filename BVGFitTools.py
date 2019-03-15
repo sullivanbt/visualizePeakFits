@@ -452,7 +452,7 @@ def compareBVGFitData(box, params, nTheta=200, nPhi=200, figNumber=2, fracBoxToH
 
 
 def doBVGFit(box, nTheta=200, nPhi=200, zBG=1.96, fracBoxToHistogram=1.0, goodIDX=None,
-             forceParams=None, forceTolerance=0.1, dth=10, dph=10, numBVGs=1,
+             forceParams=None, forceTolerance=0.1, dth=3, dph=3, numBVGs=1,
              doPeakConvolution=False, sigX0Scale=1., sigY0Scale=1.):
     """
     doBVGFit takes a binned MDbox and returns the fit of the peak shape along the non-TOF direction.  This is done in one of two ways:
@@ -531,8 +531,8 @@ def doBVGFit(box, nTheta=200, nPhi=200, zBG=1.96, fracBoxToHistogram=1.0, goodID
 
         dTH = (TH.max() - TH.mean()) / h.shape[0] 
         dPH = (PH.max() - PH.mean()) / h.shape[1] 
-        THOffsets = [0,6,-6] 
-        PHOffsets = [0,6,-6]
+        THOffsets = [0,-2,-1] 
+        PHOffsets = [0,-2,-1]
         sigXGuesses = [0.007, 0.003, 0.003]
         sigYGuesses = [0.0025, 0.003, 0.003]
         sigPGuesses = [0., 0., 0.0]
